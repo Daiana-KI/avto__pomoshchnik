@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>АвтоПомощник</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); font-family: 'Segoe UI', sans-serif; }
+        .glass-card { background: rgba(255,255,255,0.95); border-radius: 24px; padding: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.1); }
+        .car-card { cursor: pointer; transition: all 0.3s; border-radius: 16px; }
+        .car-card:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0,0,0,0.15); }
+        .car-card.active { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .answer-area { background: #f8f9fa; border-radius: 20px; padding: 20px; min-height: 200px; border-left: 4px solid #667eea; }
+        .toast-notify { position: fixed; bottom: 20px; right: 20px; z-index: 9999; min-width: 280px; }
+    </style>
+</head>
+<body>
+<div class="container mt-4">
+    <div class="glass-card">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="fas fa-car"></i> АвтоПомощник</h1>
+            <button onclick="logout()" class="btn btn-outline-danger"><i class="fas fa-sign-out-alt"></i> Выйти</button>
+        </div>
+
+        <div class="row">
+            <!-- Мои автомобили -->
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-transparent fw-bold">Мои автомобили</div>
+                    <div class="card-body" id="my-cars-list">
+                        <div class="text-muted text-center py-3">Загрузка...</div>
+                    </div>
+                    <div class="card-footer">
+                        <button class="btn btn-success w-100" data-bs-toggle="modal" data-bs-target="#addCarModal">
+                            <i class="fas fa-plus"></i> Добавить авто
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Чат -->
+            <div class="col-md-8">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <div id="selected-car-info" class="alert alert-info">🚗 Выберите автомобиль</div>
+                        <input type="hidden" id="car-model-id" value="">
+                        <div class="input-group mb-3">
+                            <input type="text" id="question" class="form-control" placeholder="Спросите: какое масло лить?">
+                            <button class="btn btn-primary" onclick="ask()">Спросить</button>
+                        </div>
+                        <div id="answer" class="answer-area">💬 Здесь появится ответ...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модалка добавления автомобиля -->
+<div class="modal fade" id="addCarModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5>Добавить автомобиль</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addCarForm">
+                    <div class="mb-2">
+                        <label class="form-label">VIN</label>
+                        <input type="text" id="vin-input" name="vin" class="form-control" placeholder="Введите 17-значный VIN" maxlength="17" required>
+                        <button type="button" class="btn btn-sm btn-outline-secondary mt-1" onclick="decodeVin()">Распознать по VIN</button>
+                    </div>
+                    <hr>
+                    <div class="mb-2">
+                        <label class="form-label">Марка</label>
+                        <input type="text" id="brand" name="brand" class="form-control" placeholder="Например: Toyota" required>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Модель</label>
+                        <input type="text" id="model" name="model" class="form-control" placeholder="Например: Camry" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-2">
+                            <label class="form-label">Год</label>
+                            <input type="number" id="year" name="year" class="form-control" placeholder="2018" required>
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <label class="form-label">Двигатель</label>
+                            <input type="text" id="engine" name="engine" class="form-control" placeholder="2.5 л, бензин">
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <label class="form-label">Трансмиссия</label>
+                            <input type="text" id="transmission" name="transmission" class="form-control" placeholder="Автомат / Механика">
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <label class="form-label">Привод</label>
+                            <input type="text" id="drive" name="drive" class="form-control" placeholder="Передний / Задний / Полный">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" id="saveCarBtn">Сохранить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="toast-notify" id="toastMessage" style="display:none;">
+    <div class="toast show">
+        <div class="toast-header bg-info text-white"><strong>Уведомление</strong></div>
+        <div class="toast-body" id="toastText"></div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    let selectedCarModelId = null;
+
+    function showToast(msg) {
+        const toastText = document.getElementById('toastText');
+        if (toastText) toastText.innerText = msg;
+        const toastMsg = document.getElementById('toastMessage');
+        if (toastMsg) toastMsg.style.display = 'block';
+        setTimeout(() => { if (toastMsg) toastMsg.style.display = 'none'; }, 3000);
+    }
+
+    async function loadMyCars() {
+        try {
+            const res = await fetch('/cars/my');
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const cars = await res.json();
+            const container = document.getElementById('my-cars-list');
+            if (!container) {
+                console.error('Контейнер my-cars-list не найден');
+                return;
+            }
+            if (cars.length === 0) {
+                container.innerHTML = '<div class="text-muted text-center py-3">У вас нет добавленных автомобилей</div>';
+                return;
+            }
+            let html = '';
+            for (const car of cars) {
+                const modelRes = await fetch(`/cars/models/${car.car_model_id}`);
+                if (!modelRes.ok) throw new Error(`Ошибка загрузки модели ${car.car_model_id}`);
+                const model = await modelRes.json();
+                html += `
+                    <div class="car-card p-3 mb-2 border" data-id="${car.car_model_id}" data-user-car-id="${car.id}">
+                        <strong>${escapeHtml(model.brand)} ${escapeHtml(model.model)}</strong><br>
+                        <small>${model.year}, ${escapeHtml(model.engine) || '—'}</small>
+                        <button class="btn btn-sm btn-warning float-end me-1 edit-car" 
+                            data-user-car-id="${car.id}" 
+                            data-brand="${escapeHtml(model.brand)}" 
+                            data-model="${escapeHtml(model.model)}" 
+                            data-year="${model.year}" 
+                            data-engine="${escapeHtml(model.engine || '')}"
+                            data-transmission="${escapeHtml(model.transmission || '')}"
+                            data-drive="${escapeHtml(model.drive || '')}">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-danger float-end delete-car" data-user-car-id="${car.id}"><i class="fas fa-trash"></i></button>
+                    </div>
+                `;
+            }
+            container.innerHTML = html;
+            attachCarEvents();
+            attachEditEvents();
+        } catch (err) {
+            console.error('loadMyCars error:', err);
+            const container = document.getElementById('my-cars-list');
+            if (container) container.innerHTML = '<div class="text-danger">Ошибка загрузки автомобилей</div>';
+        }
+    }
+
+    // Простая функция для экранирования HTML
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    function attachCarEvents() {
+        document.querySelectorAll('.car-card').forEach(card => {
+            card.addEventListener('click', function(e) {
+                if (e.target.classList.contains('delete-car') || e.target.classList.contains('edit-car')) return;
+                document.querySelectorAll('.car-card').forEach(c => c.classList.remove('active'));
+                this.classList.add('active');
+                selectedCarModelId = this.dataset.id;
+                const carModelIdInput = document.getElementById('car-model-id');
+                if (carModelIdInput) carModelIdInput.value = selectedCarModelId;
+                const infoDiv = document.getElementById('selected-car-info');
+                if (infoDiv) infoDiv.innerHTML = `🚗 Выбран: ${this.querySelector('strong').innerText}`;
+            });
+        });
+        document.querySelectorAll('.delete-car').forEach(btn => {
+            btn.addEventListener('click', async function(e) {
+                e.stopPropagation();
+                const userCarId = this.dataset.userCarId;
+                try {
+                    const res = await fetch(`/cars/my/${userCarId}`, { method: 'DELETE' });
+                    if (res.ok) {
+                        showToast('Авто удалено');
+                        await loadMyCars();
+                    } else {
+                        showToast('Ошибка удаления');
+                    }
+                } catch (err) {
+                    showToast('Ошибка сети');
+                }
+            });
+        });
+    }
+
+    function attachEditEvents() {
+        document.querySelectorAll('.edit-car').forEach(btn => {
+            btn.addEventListener('click', async function(e) {
+                e.stopPropagation();
+                const userCarId = this.dataset.userCarId;
+                const brand = this.dataset.brand;
+                const model = this.dataset.model;
+                const year = this.dataset.year;
+                const engine = this.dataset.engine;
+                const transmission = this.dataset.transmission;
+                const drive = this.dataset.drive;
+
+                const editUserCarId = document.getElementById('edit-user-car-id');
+                if (editUserCarId) editUserCarId.value = userCarId;
+                const editBrand = document.getElementById('edit-brand');
+                if (editBrand) editBrand.value = brand;
+                const editModel = document.getElementById('edit-model');
+                if (editModel) editModel.value = model;
+                const editYear = document.getElementById('edit-year');
+                if (editYear) editYear.value = year;
+                const editEngine = document.getElementById('edit-engine');
+                if (editEngine) editEngine.value = engine;
+                const editTransmission = document.getElementById('edit-transmission');
+                if (editTransmission) editTransmission.value = transmission || '';
+                const editDrive = document.getElementById('edit-drive');
+                if (editDrive) editDrive.value = drive || '';
+
+                const modal = new bootstrap.Modal(document.getElementById('editCarModal'));
+                modal.show();
+            });
+        });
+    }
+
+    async function decodeVin() {
+        const vinInput = document.getElementById('vin-input');
+        if (!vinInput) return;
+        const vin = vinInput.value.trim();
+        if (vin.length !== 17) { showToast('VIN должен быть 17 символов'); return; }
+        showToast('Декодирование VIN...');
+        try {
+            const res = await fetch('/cars/decode_vin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ vin: vin })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                const brandField = document.getElementById('brand');
+                const modelField = document.getElementById('model');
+                const yearField = document.getElementById('year');
+                const engineField = document.getElementById('engine');
+                if (brandField) brandField.value = data.brand || '';
+                if (modelField) modelField.value = data.model || '';
+                if (yearField) yearField.value = data.year || '';
+                if (engineField) engineField.value = data.engine || '';
+                showToast('VIN распознан! Проверьте данные и нажмите "Сохранить"');
+            } else {
+                showToast(data.detail || 'Ошибка распознавания VIN. Введите данные вручную');
+            }
+        } catch (err) {
+            showToast('Ошибка сети при распознавании VIN');
+        }
+    }
+
+    const saveCarBtn = document.getElementById('saveCarBtn');
+    if (saveCarBtn) {
+        saveCarBtn.onclick = async () => {
+            const vinInput = document.getElementById('vin-input');
+            if (!vinInput) return;
+            const vin = vinInput.value.trim();
+            if (vin.length !== 17) {
+                showToast('VIN должен содержать ровно 17 символов');
+                return;
+            }
+            const brandField = document.getElementById('brand');
+            const modelField = document.getElementById('model');
+            const yearField = document.getElementById('year');
+            if (!brandField || !modelField || !yearField) return;
+            const brand = brandField.value.trim();
+            const model = modelField.value.trim();
+            const year = parseInt(yearField.value);
+            if (!brand || !model || isNaN(year)) {
+                showToast('Заполните марку, модель и год');
+                return;
+            }
+            const manual_data = {
+                vin: vin,
+                brand: brand,
+                model: model,
+                year: year,
+                engine: document.getElementById('engine')?.value || null,
+                transmission: document.getElementById('transmission')?.value || null,
+                drive: document.getElementById('drive')?.value || null
+            };
+            const requestBody = { vin: vin, manual_data: manual_data };
+            try {
+                const res = await fetch('/cars/my', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(requestBody)
+                });
+                if (res.ok) {
+                    showToast('Авто добавлено');
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('addCarModal'));
+                    if (modal) modal.hide();
+                    await loadMyCars();
+                    const form = document.getElementById('addCarForm');
+                    if (form) form.reset();
+                } else {
+                    const error = await res.json();
+                    showToast(error.detail || 'Ошибка добавления');
+                }
+            } catch (err) {
+                showToast('Ошибка сети');
+            }
+        };
+    }
+
+    async function ask() {
+        if (!selectedCarModelId) { showToast('Выберите авто'); return; }
+        const questionInput = document.getElementById('question');
+        if (!questionInput) return;
+        const question = questionInput.value;
+        if (!question) return;
+        try {
+            const res = await fetch('/ask/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ car_model_id: selectedCarModelId, question })
+            });
+            const data = await res.json();
+            const answerDiv = document.getElementById('answer');
+            if (answerDiv) answerDiv.innerHTML = `<i class="fas fa-comment-dots"></i> ${data.answer.replace(/\n/g, '<br>')}`;
+        } catch (err) {
+            showToast('Ошибка получения ответа');
+        }
+    }
+
+    function logout() { window.location.href = '/logout'; }
+
+    const saveEditCarBtn = document.getElementById('saveEditCarBtn');
+    if (saveEditCarBtn) {
+        saveEditCarBtn.onclick = async () => {
+            const userCarIdField = document.getElementById('edit-user-car-id');
+            if (!userCarIdField) return;
+            const userCarId = userCarIdField.value;
+            const brandField = document.getElementById('edit-brand');
+            const modelField = document.getElementById('edit-model');
+            const yearField = document.getElementById('edit-year');
+            if (!brandField || !modelField || !yearField) return;
+            const data = {
+                brand: brandField.value,
+                model: modelField.value,
+                year: parseInt(yearField.value),
+                engine: document.getElementById('edit-engine')?.value || null,
+                transmission: document.getElementById('edit-transmission')?.value || null,
+                drive: document.getElementById('edit-drive')?.value || null
+            };
+            try {
+                const res = await fetch(`/cars/my/${userCarId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                if (res.ok) {
+                    showToast('Автомобиль обновлён');
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('editCarModal'));
+                    if (modal) modal.hide();
+                    await loadMyCars();
+                } else {
+                    showToast('Ошибка обновления');
+                }
+            } catch (err) {
+                showToast('Ошибка сети');
+            }
+        };
+    }
+
+    loadMyCars();
+
+</script>
+
+<!-- Модалка редактирования автомобиля -->
+<div class="modal fade" id="editCarModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5>Редактировать автомобиль</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="edit-user-car-id">
+                <div class="mb-2"><label>Марка</label><input type="text" id="edit-brand" class="form-control"></div>
+                <div class="mb-2"><label>Модель</label><input type="text" id="edit-model" class="form-control"></div>
+                <div class="mb-2"><label>Год</label><input type="number" id="edit-year" class="form-control"></div>
+                <div class="mb-2"><label>Двигатель</label><input type="text" id="edit-engine" class="form-control"></div>
+                <div class="mb-2"><label>Трансмиссия</label><input type="text" id="edit-transmission" class="form-control"></div>
+                <div class="mb-2"><label>Привод</label><input type="text" id="edit-drive" class="form-control"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button class="btn btn-primary" id="saveEditCarBtn">Сохранить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,14 @@
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+sqlalchemy==2.0.36
+alembic==1.14.1
+asyncpg==0.30.0
+passlib[bcrypt]==1.7.4
+python-jose[cryptography]==3.3.0
+python-multipart==0.0.20
+pydantic[email]==2.10.4
+pymorphy3==2.0.6
+pymorphy3-dicts-ru==2.4.417150.4580142
+scikit-learn==1.6.0
+joblib==1.4.2
+python-dotenv==1.0.1

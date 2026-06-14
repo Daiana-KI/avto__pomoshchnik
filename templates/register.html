@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Регистрация – АвтоПомощник</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Segoe UI', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 32px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            width: 100%;
+            max-width: 450px;
+            transition: transform 0.3s;
+        }
+        .glass-card:hover {
+            transform: translateY(-5px);
+        }
+        .form-control {
+            border-radius: 30px;
+            padding: 12px 20px;
+            border: 2px solid #e0e0e0;
+            transition: all 0.3s;
+        }
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: none;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 30px;
+            padding: 12px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        .btn-primary:hover {
+            transform: scale(1.02);
+            filter: brightness(1.05);
+        }
+        .error-message {
+            background: #f8d7da;
+            color: #842029;
+            border-radius: 20px;
+            padding: 12px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+<div class="glass-card">
+    <div class="text-center mb-4">
+        <i class="fas fa-car-side fa-3x" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; color: transparent;"></i>
+        <h2 class="mt-2">Добро пожаловать</h2>
+        <p class="text-muted">Создайте аккаунт</p>
+    </div>
+
+    {% if error %}
+    <div class="error-message">
+        <i class="fas fa-exclamation-circle"></i> {{ error }}
+    </div>
+    {% endif %}
+
+    <form method="post" action="/register">
+        <div class="mb-3">
+            <div class="input-group">
+                <span class="input-group-text bg-transparent border-end-0"><i class="fas fa-user"></i></span>
+                <input type="text" name="username" class="form-control border-start-0" placeholder="Логин" required>
+            </div>
+        </div>
+        <div class="mb-3">
+            <div class="input-group">
+                <span class="input-group-text bg-transparent border-end-0"><i class="fas fa-envelope"></i></span>
+                <input type="email" name="email" class="form-control border-start-0" placeholder="Email (необязательно)">
+            </div>
+        </div>
+        <div class="mb-4">
+            <div class="input-group">
+                <span class="input-group-text bg-transparent border-end-0"><i class="fas fa-lock"></i></span>
+                <input type="password" name="password" class="form-control border-start-0" placeholder="Пароль" required>
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary w-100 mb-3">
+            <i class="fas fa-user-plus"></i> Зарегистрироваться
+        </button>
+        <div class="text-center">
+            <a href="/login" class="text-decoration-none">Уже есть аккаунт? Войти</a>
+        </div>
+    </form>
+</div>
+</body>
+</html>
