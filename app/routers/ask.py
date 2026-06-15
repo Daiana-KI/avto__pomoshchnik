@@ -3,10 +3,9 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.crud import get_car_model_by_id
+from app.cache import redis_client
 from app.parsers.parts_parser import search_parts_hybrid as search_parts_all_sources
 from pydantic import BaseModel
-from app.parsers.parts_parser import search_parts_hybrid as search_parts_all_sources
-from app.intelligent_search import find_relevant_parts
 
 router = APIRouter(prefix="/ask", tags=["ask"])
 
@@ -20,11 +19,26 @@ async def ask(request: Request, question_data: QuestionRequest, db: AsyncSession
     if not car_model:
         raise HTTPException(status_code=404, detail="Модель автомобиля не найдена")
     
+    user_id = request.session.get("user_id")
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Необходимо авторизоваться")
+    
     question = question_data.question
-    vin = car_model.vin  # должно быть поле vin в car_models!
+    vin = car_model.vin
 
-    # Ищем запчасти интеллектуально (по смыслу)
-    parts = await search_parts_all_sources(vin=vin, question=question)
+    # ----- Контекст диалога (Redis) -----
+    context_key = f"dialog:{user_id}"
+    # Загружаем последние 3 вопроса из истории
+    last_questions = await redis_client.lrange(context_key, -3, -1)
+    if last_questions:
+        # Добавляем контекст к текущему вопросу
+        context = " ".join(last_questions)
+        full_question = f"{context} {question}"
+    else:
+        full_question = question
+
+    # Ищем запчасти (передаём вопрос с контекстом)
+    parts = await search_parts_all_sources(vin=vin, question=full_question)
 
     if parts:
         answer = f"Релевантные запчасти для {car_model.brand} {car_model.model}:\n\n"
@@ -32,14 +46,16 @@ async def ask(request: Request, question_data: QuestionRequest, db: AsyncSession
             price_str = f"{p['price']} ₽" if p.get('price') else "цена не указана"
             sim = p.get('similarity', 0)
             answer += f"• {p['name']} (арт. {p['article']}) — {price_str} (совпадение: {sim:.0%})\n"
-        return {"answer": answer}
-    
-    # Если не нашли — возможно, вопрос о поломке (короткий список ключевых слов, но это не rule‑based, а просто утилита)
-    breakdown_keywords = ['заглох', 'не заводится', 'стук', 'перегрев', 'дымит', 'чек']
-    if any(kw in question.lower() for kw in breakdown_keywords):
-        answer = f"Инструкция для {car_model.brand} {car_model.model}:\n\n1. Проверьте уровень топлива\n2. Проверьте аккумулятор\n3. Обратитесь на СТО"
     else:
-        answer = f"Запчасти по вашему запросу не найдены. Попробуйте переформулировать вопрос."
-    
-    return {"answer": answer}
+        # fallback (можно убрать, если не нужно)
+        breakdown_keywords = ['заглох', 'не заводится', 'стук', 'перегрев', 'дымит', 'чек']
+        if any(kw in question.lower() for kw in breakdown_keywords):
+            answer = f"Инструкция для {car_model.brand} {car_model.model}:\n\n1. Проверьте уровень топлива\n2. Проверьте аккумулятор\n3. Обратитесь на СТО"
+        else:
+            answer = "Запчасти по вашему запросу не найдены. Попробуйте переформулировать вопрос."
 
+    # Сохраняем текущий вопрос в историю (TTL 10 минут)
+    await redis_client.rpush(context_key, question)
+    await redis_client.expire(context_key, 600)
+
+    return {"answer": answer}

@@ -42,36 +42,6 @@ class UserCar(Base):
     user = relationship("User", back_populates="user_cars")
     car_model = relationship("CarModel", back_populates="user_cars")
 
-class Part(Base):
-    __tablename__ = "parts"
-    id = Column(Integer, primary_key=True, index=True)
-    car_model_id = Column(Integer, ForeignKey("car_models.id"), nullable=False)
-    part_type = Column(String, nullable=False)
-    original_article = Column(String, nullable=False)
-    name = Column(String, nullable=False)
-    specs = Column(String, nullable=True)
-    
-    car_model = relationship("CarModel", back_populates="parts")
-    crosses = relationship("Cross", back_populates="original_part", cascade="all, delete-orphan")
-
-class Cross(Base):
-    __tablename__ = "crosses"
-    id = Column(Integer, primary_key=True, index=True)
-    part_id = Column(Integer, ForeignKey("parts.id"), nullable=False)
-    manufacturer = Column(String, nullable=False)
-    analog_article = Column(String, nullable=False)
-    
-    original_part = relationship("Part", back_populates="crosses")
-
-class Instruction(Base):
-    __tablename__ = "instructions"
-    id = Column(Integer, primary_key=True, index=True)
-    car_model_id = Column(Integer, ForeignKey("car_models.id"), nullable=False)
-    keywords = Column(String, nullable=False)
-    text = Column(Text, nullable=False)
-    need_service = Column(Integer, default=0)
-    
-    car_model = relationship("CarModel", back_populates="instructions")
 
 class ChatHistory(Base):
     __tablename__ = "chat_history"

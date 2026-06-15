@@ -250,36 +250,40 @@
         });
     }
 
-    async function decodeVin() {
-        const vinInput = document.getElementById('vin-input');
-        if (!vinInput) return;
-        const vin = vinInput.value.trim();
-        if (vin.length !== 17) { showToast('VIN должен быть 17 символов'); return; }
-        showToast('Декодирование VIN...');
-        try {
-            const res = await fetch('/cars/decode_vin', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ vin: vin })
-            });
-            const data = await res.json();
-            if (res.ok) {
-                const brandField = document.getElementById('brand');
-                const modelField = document.getElementById('model');
-                const yearField = document.getElementById('year');
-                const engineField = document.getElementById('engine');
-                if (brandField) brandField.value = data.brand || '';
-                if (modelField) modelField.value = data.model || '';
-                if (yearField) yearField.value = data.year || '';
-                if (engineField) engineField.value = data.engine || '';
-                showToast('VIN распознан! Проверьте данные и нажмите "Сохранить"');
-            } else {
-                showToast(data.detail || 'Ошибка распознавания VIN. Введите данные вручную');
-            }
-        } catch (err) {
-            showToast('Ошибка сети при распознавании VIN');
+async function decodeVin() {
+    const vinInput = document.getElementById('vin-input');
+    if (!vinInput) return;
+    const vin = vinInput.value.trim();
+    if (vin.length !== 17) { showToast('VIN должен быть 17 символов'); return; }
+    showToast('Декодирование VIN...');
+    try {
+        const res = await fetch('/cars/decode_vin', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ vin: vin })
+        });
+        const data = await res.json();
+        if (res.ok) {
+            const brandField = document.getElementById('brand');
+            const modelField = document.getElementById('model');
+            const yearField = document.getElementById('year');
+            const engineField = document.getElementById('engine');
+            const driveField = document.getElementById('drive');
+            const transmissionField = document.getElementById('transmission');
+            if (brandField) brandField.value = data.brand || '';
+            if (modelField) modelField.value = data.model || '';
+            if (yearField) yearField.value = data.year || '';
+            if (engineField) engineField.value = data.engine || '';
+            if (driveField) driveField.value = data.drive || '';         
+            if (transmissionField) transmissionField.value = data.transmission || ''; 
+            showToast('VIN распознан! Проверьте данные и нажмите "Сохранить"');
+        } else {
+            showToast(data.detail || 'Ошибка распознавания VIN. Введите данные вручную');
         }
+    } catch (err) {
+        showToast('Ошибка сети при распознавании VIN');
     }
+}
 
     const saveCarBtn = document.getElementById('saveCarBtn');
     if (saveCarBtn) {

@@ -9,6 +9,11 @@ import os
 MODEL_NAME = 'intfloat/multilingual-e5-small'  # компактная, быстрая
 _model = None
 
+def lemmatize_text(text: str) -> str:
+    import pymorphy3
+    morph = pymorphy3.MorphAnalyzer()
+    return ' '.join([morph.parse(word)[0].normal_form for word in text.split()])
+
 def get_model():
     global _model
     if _model is None:

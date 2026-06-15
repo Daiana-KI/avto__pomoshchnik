@@ -120,16 +120,14 @@ async def delete_my_car(request: Request, user_car_id: int, db: AsyncSession = D
     return {"message": "Автомобиль удалён"}
 
 @router.post("/decode_vin")
-async def decode_vin_endpoint(vin_data: dict, db: AsyncSession = Depends(get_db)):
+async def decode_vin_endpoint(vin_data: dict):
     vin = vin_data.get("vin", "").strip()
     if len(vin) != 17:
-        raise HTTPException(status_code=400, detail="VIN должен содержать 17 символов")
-    
+        raise HTTPException(status_code=400, detail="VIN должен быть 17 символов")
     car_info = await decode_vin(vin)
-    if not car_info or not car_info.get("brand"):
+    if not car_info:
         raise HTTPException(status_code=404, detail="Не удалось декодировать VIN")
-    
-    return car_info
+    return car_info 
 
 @router.put("/my/{user_car_id}")
 async def update_my_car(request: Request, user_car_id: int, data: ManualCarData, db: AsyncSession = Depends(get_db)):
