@@ -16,4 +16,5 @@ httpx==0.28.1
 beautifulsoup4==4.12.3
 redis==5.2.1
 itsdangerous==2.1.2
-#sentence-transformers==2.2.2 
+sentence-transformers==2.2.2
+torch==2.0.1
