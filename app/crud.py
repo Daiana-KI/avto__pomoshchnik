@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from app.models import User, CarModel, UserCar, Part, Cross, Instruction
+from app.models import User, CarModel, UserCar
 from app.cache import cached
 
 @cached(expire=86400)  # кэш на сутки
@@ -71,26 +71,3 @@ async def delete_user_car(db: AsyncSession, user_car_id: int, user_id: int):
         await db.commit()
     return user_car
 
-# ---------- Запчасти и инструкции ----------
-async def get_part_by_car_model_and_type(db: AsyncSession, car_model_id: int, part_type: str):
-    result = await db.execute(
-        select(Part).where(Part.car_model_id == car_model_id, Part.part_type == part_type)
-    )
-    return result.scalars().all()  # возвращаем ВСЕ записи, а не одну
-
-async def get_crosses_by_part_id(db: AsyncSession, part_id: int):
-    result = await db.execute(select(Cross).where(Cross.part_id == part_id))
-    return result.scalars().all()
-
-async def get_instruction_by_car_model_id(db: AsyncSession, car_model_id: int, text: str):
-    """Ищет инструкцию, ключевые слова которой есть в тексте вопроса"""
-    all_instr = await db.execute(select(Instruction).where(Instruction.car_model_id == car_model_id))
-    instructions = all_instr.scalars().all()
-    
-    for instr in instructions:
-        keywords = instr.keywords.lower().split(',')
-        for kw in keywords:
-            kw_clean = kw.strip()
-            if kw_clean and kw_clean in text.lower():
-                return instr
-    return None
