@@ -4,6 +4,7 @@ from sqlalchemy import engine_from_config, pool
 from sqlalchemy.ext.asyncio import AsyncEngine
 from alembic import context
 import sys
+import os
 from pathlib import Path
 
 # Добавляем путь к приложению, чтобы импортировать Base
@@ -34,9 +35,18 @@ def run_migrations_offline():
 
 def run_migrations_online():
     """Запуск миграций в online-режиме (синхронно)."""
-    # Alembic использует синхронное подключение из sqlalchemy.url
+    # Берём URL из переменной окружения DATABASE_URL, если она есть
+    # и заменяем +asyncpg на пустую строку для синхронного драйвера
+    database_url = os.getenv("DATABASE_URL", config.get_main_option("sqlalchemy.url"))
+    if database_url and "+asyncpg" in database_url:
+        database_url = database_url.replace("+asyncpg", "")
+
+    # Создаём конфиг для Alembic
+    alembic_config = config.get_section(config.config_ini_section)
+    alembic_config["sqlalchemy.url"] = database_url
+
     connectable = engine_from_config(
-        config.get_section(config.config_ini_section),
+        alembic_config,
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )

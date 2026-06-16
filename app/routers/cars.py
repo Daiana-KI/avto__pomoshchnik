@@ -48,18 +48,26 @@ async def add_my_car(request: Request, data: AddCarRequest, db: AsyncSession = D
     
     car_model = None
     if car_info and car_info.get("brand"):
-        # Успешное декодирование
+        # Берём данные из car_info, но если чего-то нет – подставляем из manual_data
+        manual = data.manual_data if data.manual_data else None
+        brand = car_info["brand"]
+        model = car_info["model"]
+        year = car_info["year"]
+        engine = car_info.get("engine") or (manual.engine if manual else None)
+        transmission = car_info.get("transmission") or (manual.transmission if manual else None)
+        drive = car_info.get("drive") or (manual.drive if manual else None)
+
         result = await db.execute(select(CarModel).where(CarModel.vin == data.vin))
         car_model = result.scalar_one_or_none()
         if not car_model:
             car_model = CarModel(
                 vin=data.vin,
-                brand=car_info["brand"],
-                model=car_info["model"],
-                year=car_info["year"],
-                engine=car_info.get("engine"),
-                transmission=car_info.get("transmission"),
-                drive=car_info.get("drive")
+                brand=brand,
+                model=model,
+                year=year,
+                engine=engine,
+                transmission=transmission,
+                drive=drive
             )
             db.add(car_model)
             await db.commit()
