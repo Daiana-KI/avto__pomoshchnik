@@ -1,8 +1,8 @@
 # app/services/tecdoc_api.py
 import httpx
 
-TECDOC_API_KEY = "01186691560aa5dbda9f7be1c2dcc7ec"  # тестовый ключ TecDoc
-BASE_URL = "https://api.tecdoc.net/v1"  # официальный URL TecDoc API
+TECDOC_API_KEY = "01186691560aa5dbda9f7be1c2dcc7ec"  
+BASE_URL = "https://api.tecdoc.net/v1"  
 
 async def get_parts_by_vin(vin: str, cat: str):
     params = {
@@ -29,3 +29,6 @@ async def get_parts_by_vin(vin: str, cat: str):
                     "manufacturer": brand
                 })
         return parts
+
+async def search_in_local_db(vin: str, question: str):
+    return []

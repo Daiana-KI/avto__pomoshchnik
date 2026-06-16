@@ -1,14 +1,15 @@
 # app/services/api_gateway.py
+import numpy as np
 import httpx
 import json
-import numpy as np
 from typing import List, Dict, Optional
-from app.intelligent_search import embed_text, cosine_similarity
 from app.cache import redis_client
+from app.intelligent_search import embed_text
+from sklearn.metrics.pairwise import cosine_similarity
 from app.parsers.vin_parser import decode_vin
 
-TECDOC_API_KEY = "01186691560aa5dbda9f7be1c2dcc7ec"  # ключ TecDoc
-BASE_URL = "https://api.tecdoc.net/v1"  # официальный URL TecDoc API
+TECDOC_API_KEY = "01186691560aa5dbda9f7be1c2dcc7ec"
+BASE_URL = "https://api.tecdoc.net/v1"
 
 class APIGateway:
     def __init__(self):
@@ -23,7 +24,6 @@ class APIGateway:
             return resp.json()
 
     async def _get_car_id(self, vin: str) -> Optional[str]:
-        """carId из VINdecode"""
         data = await self._call_tecdoc("VINdecode", {"vin": vin, "lang": "ru"})
         if data.get("statusMsg") == "Success":
             result = data.get("result", {})
@@ -33,17 +33,18 @@ class APIGateway:
 
     async def _get_parts_tree(self, car_id: str) -> List[Dict]:
         cache_key = f"tecdoc_tree:{car_id}"
-        cached = await redis_client.get(cache_key)
-        if cached:
-            return json.loads(cached)
+        if redis_client is not None:
+            cached = await redis_client.get(cache_key)
+            if cached:
+                return json.loads(cached)
         tree = await self._call_tecdoc("getSearchTree", {"carId": car_id, "carType": "PC", "lang": "ru"})
         if isinstance(tree, list):
-            await redis_client.setex(cache_key, 86400, json.dumps(tree))
+            if redis_client is not None:
+                await redis_client.setex(cache_key, 86400, json.dumps(tree))
             return tree
         return []
 
     async def _find_cat(self, question: str, car_id: str) -> Optional[str]:
-        """Определяет cat по смыслу вопроса через эмбеддинги"""
         tree = await self._get_parts_tree(car_id)
         names, ids = [], []
         for node in tree:
@@ -63,11 +64,14 @@ class APIGateway:
         return None
 
     async def search_parts_by_vin(self, vin: str, question: str, user_id: int) -> List[Dict]:
-        # Загрузка контекста (последние 3 вопроса)
-        context_key = f"dialog:{user_id}"
-        last = await redis_client.lrange(context_key, -3, -1)
-        if last:
-            question = " ".join(last) + " " + question
+        # Контекст диалога – только если Redis доступен
+        if redis_client is not None:
+            context_key = f"dialog:{user_id}"
+            last = await redis_client.lrange(context_key, -3, -1)
+            if last:
+                question = " ".join(last) + " " + question
+        else:
+            context_key = None
 
         car_id = await self._get_car_id(vin)
         if not car_id:
@@ -91,6 +95,10 @@ class APIGateway:
                         "article": tokens[i+1],
                         "manufacturer": tokens[i]
                     })
-        await redis_client.rpush(context_key, question)
-        await redis_client.expire(context_key, 600)
+
+        # Сохраняем вопрос в историю, если Redis доступен
+        if redis_client is not None and context_key is not None:
+            await redis_client.rpush(context_key, question)
+            await redis_client.expire(context_key, 600)
+
         return parts

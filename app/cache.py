@@ -8,8 +8,12 @@ redis_client = None
 async def init_redis():
     global redis_client
     redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
-    redis_client = await redis.from_url(redis_url, decode_responses=True)
-    print(f"Redis connected: {redis_url}")
+    try:
+        redis_client = await redis.from_url(redis_url, decode_responses=True)
+        print(f"Redis connected: {redis_url}")
+    except Exception as e:
+        print(f"Redis connection failed: {e}")
+        redis_client = None
     return redis_client
 
 async def close_redis():

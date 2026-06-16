@@ -14,7 +14,6 @@ class User(Base):
     reset_token_expiry = Column(DateTime, nullable=True)
 
     user_cars = relationship("UserCar", back_populates="user", cascade="all, delete-orphan")
-    chat_history = relationship("ChatHistory", back_populates="user")
 
 class CarModel(Base):
     __tablename__ = "car_models"
@@ -28,9 +27,6 @@ class CarModel(Base):
     drive = Column(String, nullable=True)
     
     user_cars = relationship("UserCar", back_populates="car_model")
-    parts = relationship("Part", back_populates="car_model", cascade="all, delete-orphan")
-    instructions = relationship("Instruction", back_populates="car_model", cascade="all, delete-orphan")
-    chat_history = relationship("ChatHistory", back_populates="car_model")
 
 class UserCar(Base):
     __tablename__ = "user_cars"
@@ -41,16 +37,3 @@ class UserCar(Base):
     
     user = relationship("User", back_populates="user_cars")
     car_model = relationship("CarModel", back_populates="user_cars")
-
-
-class ChatHistory(Base):
-    __tablename__ = "chat_history"
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    car_model_id = Column(Integer, ForeignKey("car_models.id"), nullable=False)
-    question = Column(Text, nullable=False)
-    answer = Column(Text, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    
-    user = relationship("User", back_populates="chat_history")
-    car_model = relationship("CarModel", back_populates="chat_history")

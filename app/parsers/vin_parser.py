@@ -23,11 +23,6 @@ async def decode_vin(vin: str) -> Optional[Dict]:
             # Получаем весь видимый текст
             text = soup.get_text(separator='\n')
             
-            # Отладочный вывод: первые 4000 символов
-            print("=== НАЧАЛО ТЕКСТА СТРАНИЦЫ (4000 символов) ===")
-            print(text[:4000])
-            print("=== КОНЕЦ ОТЛАДОЧНОГО ВЫВОДА ===")
-
             car_info = {
                 "brand": "",
                 "model": "",

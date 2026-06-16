@@ -1,17 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.models import User, CarModel, UserCar
-from app.cache import cached
 
-@cached(expire=86400)  # кэш на сутки
-async def get_car_model_by_id(db: AsyncSession, car_model_id: int):
-    result = await db.execute(select(CarModel).where(CarModel.id == car_model_id))
-    return result.scalar_one_or_none()
-
-@cached(expire=86400)
-async def get_all_car_models(db: AsyncSession):
-    result = await db.execute(select(CarModel))
-    return result.scalars().all()
 
 # ---------- Пользователи ----------
 async def get_user_by_username(db: AsyncSession, username: str):
