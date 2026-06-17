@@ -37,6 +37,23 @@ MOCK_PARTS = {
         ],
         "щётки": [
             {"name": "Щётки стеклоочистителя (комплект)", "article": "28890-4BA0A", "manufacturer": "Nissan"}
+        ],
+        "свечи": [
+            {"name": "Свеча зажигания", "article": "22401-4BA0A", "manufacturer": "Nissan"},
+            {"name": "Свеча зажигания иридиевая", "article": "22401-4BA0B", "manufacturer": "NGK"}
+        ],
+        "колодки": [
+            {"name": "Колодки тормозные передние", "article": "41060-4BA0A", "manufacturer": "Nissan"},
+            {"name": "Колодки тормозные задние", "article": "44060-4BA0A", "manufacturer": "Nissan"}
+        ],
+        "фильтры": [
+            {"name": "Фильтр масляный", "article": "15208-4BA0A", "manufacturer": "Nissan"},
+            {"name": "Фильтр воздушный", "article": "16546-4BA0A", "manufacturer": "Nissan"},
+            {"name": "Фильтр салонный", "article": "27277-4BA0A", "manufacturer": "Nissan"}
+        ],
+        "масло": [
+            {"name": "Масло моторное 5W-30", "article": "KLE52-00001", "manufacturer": "Nissan"},
+            {"name": "Масло моторное 0W-20", "article": "KLE52-00002", "manufacturer": "Nissan"}
         ]
     }
 }

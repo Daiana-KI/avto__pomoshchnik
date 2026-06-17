@@ -107,5 +107,5 @@ async def profile(request: Request, db: AsyncSession = Depends(get_db)):
 @app.get("/logout")
 async def logout(request: Request, response: Response):
     request.session.clear()
-    response.delete_cookie("session")  
+    response.delete_cookie("session", path="/")  
     return RedirectResponse(url="/login")
