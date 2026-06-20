@@ -4,7 +4,7 @@ from app.intelligent_search import find_relevant_parts
 API_KEY = "hgHFioLn6kZHewCI2kGdRqja8Fr3cOaN0Z4iMNZXEQWtqn0LESk4Is6pbQEG"
 gateway = TecDocGateway(API_KEY)
 
-MAX_PARTS_FOR_RANKING = 300
+MAX_PARTS_FOR_RANKING = 100
 
 async def search_parts_hybrid(vin: str, question: str, original_question: str, user_id: int):
     print(f"Начинаем для VIN: {vin}, Вопрос: '{question}'")
@@ -38,7 +38,7 @@ async def search_parts_hybrid(vin: str, question: str, original_question: str, u
                 print("Нет категорий, содержащих ключевые слова, используем все категории")
                 return []
 
-        selected_cats = cat_results[:10]
+        selected_cats = cat_results[:3]
         print(f"Выбрано категорий для поиска: {len(selected_cats)}")
         for cat in selected_cats:
             print(f"  - {cat['name']} (score: {cat['score']:.4f})")
