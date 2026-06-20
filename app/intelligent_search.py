@@ -5,7 +5,7 @@ from app.cache import get_embeddings_cache, set_embeddings_cache
 import torch
 
 # Загружаем русскоязычную модель (легковесную, работает на CPU)
-MODEL_NAME = 'paraphrase-multilingual-MiniLM-L12-v2'
+MODEL_NAME = 'all-MiniLM-L6-v2'
 _model = None
 
 def lemmatize_text(text: str) -> str:

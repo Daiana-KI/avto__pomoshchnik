@@ -4,7 +4,7 @@ from app.intelligent_search import find_relevant_parts
 API_KEY = "hgHFioLn6kZHewCI2kGdRqja8Fr3cOaN0Z4iMNZXEQWtqn0LESk4Is6pbQEG"
 gateway = TecDocGateway(API_KEY)
 
-MAX_PARTS_FOR_RANKING = 50
+MAX_PARTS_FOR_RANKING = 20
 
 async def search_parts_hybrid(vin: str, question: str, original_question: str, user_id: int):
     print(f"Начинаем для VIN: {vin}, Вопрос: '{question}'")
