@@ -27,15 +27,15 @@ app.include_router(cars.router)
 app.include_router(ask.router)
 app.include_router(auth.router)
 
-@app.on_event("startup")
-async def startup():
-    await init_redis()
-    # Предварительная загрузка модели эмбеддингов
-    try:
-        get_model()
-        print("Модель эмбеддингов загружена при старте")
-    except Exception as e:
-        print(f"Ошибка загрузки модели: {e}")
+#@app.on_event("startup")
+#async def startup():
+ #   await init_redis()
+  #  # Предварительная загрузка модели эмбеддингов
+   # try:
+    #    get_model()
+     #   print("Модель эмбеддингов загружена при старте")
+    #except Exception as e:
+     #   print(f"Ошибка загрузки модели: {e}")
 
 @app.on_event("shutdown")
 async def shutdown():
