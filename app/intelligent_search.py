@@ -1,15 +1,14 @@
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
-import pickle
-import os
+from app.cache import get_embeddings_cache, set_embeddings_cache
 
 # Загружаем русскоязычную модель (легковесную, работает на CPU)
-# Модель кэшируется в памяти после первого вызова
-MODEL_NAME = 'intfloat/multilingual-e5-small'  # компактная, быстрая
+MODEL_NAME = 'intfloat/multilingual-e5-small'
 _model = None
 
 def lemmatize_text(text: str) -> str:
+    """Приводит слова к нормальной форме (лемматизация)"""
     import pymorphy3
     morph = pymorphy3.MorphAnalyzer()
     return ' '.join([morph.parse(word)[0].normal_form for word in text.split()])
@@ -21,34 +20,56 @@ def get_model():
         _model = SentenceTransformer(MODEL_NAME)
     return _model
 
-def embed_text(text: str) -> np.ndarray:
+def embed_text(text):
     """Превращает текст в вектор (нормализованный)"""
     model = get_model()
     return model.encode(text, normalize_embeddings=True)
 
-def find_relevant_parts(question: str, parts: list, top_k: int = 5, threshold: float = 0.5) -> list:
+def lemmatized_embed_text(text):
+    """
+    Применяет лемматизацию к тексту перед вычислением эмбеддинга
+    """
+    if isinstance(text, str):
+        lemmatized = lemmatize_text(text)
+        return embed_text(lemmatized)
+    elif isinstance(text, list):
+        lemmatized_list = [lemmatize_text(t) for t in text]
+        return embed_text(lemmatized_list)
+    else:
+        raise TypeError("text must be str or list")
+
+async def find_relevant_parts(question: str, parts: list, gen_id: int, str_id: int, top_k: int = 8, threshold: float = 0.3) -> list:
     """
     Ищет запчасти, смысл которых близок к вопросу.
     parts: список словарей с ключом 'name' (название детали)
+    gen_id, str_id — для кэширования эмбеддингов в Redis
     возвращает: список частей, отсортированных по релевантности
     """
     if not parts:
         return []
     
-    # Вектор вопроса
-    query_vec = embed_text(question)
+    # Вектор вопроса (с лемматизацией)
+    query_vec = lemmatized_embed_text(question)
     
-    # Векторы названий деталей
-    part_names = [p.get('name', '') for p in parts]
-    part_vecs = embed_text(part_names)  # матрица (len(parts) x dim)
+    # Пытаемся получить эмбеддинги из Redis
+    part_vecs = await get_embeddings_cache(gen_id, str_id)
+    
+    if part_vecs is None:
+        # Кэша нет — вычисляем эмбеддинги с лемматизацией
+        print(f"Вычисляем эмбеддинги для {len(parts)} деталей...")
+        part_names = [p.get('name', '') for p in parts]
+        part_vecs = lemmatized_embed_text(part_names)
+        
+        # Сохраняем в Redis
+        await set_embeddings_cache(gen_id, str_id, part_vecs)
+        print(f"Эмбеддинги сохранены в Redis для gen_id={gen_id}, str_id={str_id}")
+    else:
+        print(f"Эмбеддинги загружены из Redis для gen_id={gen_id}, str_id={str_id}")
     
     # Косинусное сходство
     similarities = cosine_similarity([query_vec], part_vecs)[0]
-    
-    # Сортируем по убыванию
     indices = np.argsort(similarities)[::-1]
     
-    # Отбираем топ-k, где сходство выше порога
     result = []
     for i in indices[:top_k]:
         if similarities[i] >= threshold:

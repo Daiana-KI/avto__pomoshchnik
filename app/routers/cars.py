@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
+from app.services.tecdoc_gateway import TecDocGateway
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.database import get_db
@@ -9,6 +10,8 @@ from app.parsers.vin_parser import decode_vin
 from pydantic import BaseModel
 from typing import Optional
 
+API_KEY = "hgHFioLn6kZHewCI2kGdRqja8Fr3cOaN0Z4iMNZXEQWtqn0LESk4Is6pbQEG"
+gateway = TecDocGateway(API_KEY)
 router = APIRouter(prefix="/cars", tags=["cars"])
     
 @router.get("/models", response_model=list[CarModelOut])
@@ -43,8 +46,12 @@ async def add_my_car(request: Request, data: AddCarRequest, db: AsyncSession = D
     if not data.vin or len(data.vin) != 17:
         raise HTTPException(status_code=400, detail="VIN обязателен и должен содержать 17 символов")
     
-    # Пытаемся декодировать VIN через API
-    car_info = await decode_vin(data.vin)
+    # Пытаемся получить данные через TecDoc API
+    car_info = await gateway.get_vin_info(data.vin)
+    if not car_info:
+        # Если API не ответил — используем carsvin.ru
+        car_info = await decode_vin(data.vin)
+        print("Используем carsvin.ru как резерв")
     
     car_model = None
     if car_info and car_info.get("brand"):

@@ -2,6 +2,7 @@ import redis.asyncio as redis
 import json
 import os
 from functools import wraps
+import numpy as np
 
 redis_client = None
 
@@ -29,7 +30,6 @@ def cached(expire=3600):
             if redis_client is None:
                 return await func(*args, **kwargs)
             
-            # Создаём ключ кэша
             import hashlib
             key_str = f"{func.__name__}:{str(args)}:{str(sorted(kwargs.items()))}"
             cache_key = hashlib.md5(key_str.encode()).hexdigest()
@@ -60,3 +60,35 @@ async def clear_user_cache(user_id: int):
         keys = await redis_client.keys(f"*:{user_id}:*")
         if keys:
             await redis_client.delete(*keys)
+
+# ===== Новые функции для кэширования эмбеддингов =====
+
+async def get_embeddings_cache(gen_id: int, str_id: int):
+    """
+    Получить кэшированные эмбеддинги деталей из Redis
+    Возвращает numpy array или None
+    """
+    if redis_client is None:
+        return None
+    
+    cache_key = f"embeddings:{gen_id}:{str_id}"
+    data = await redis_client.get(cache_key)
+    if data:
+        try:
+            return np.array(json.loads(data))
+        except:
+            return None
+    return None
+
+async def set_embeddings_cache(gen_id: int, str_id: int, embeddings: np.ndarray, expire: int = 604800):
+    """
+    Сохранить эмбеддинги деталей в Redis
+    expire = 604800 секунд (7 дней) — данные TecDoc редко меняются
+    """
+    if redis_client is None:
+        return
+    
+    cache_key = f"embeddings:{gen_id}:{str_id}"
+    data = embeddings.tolist()
+    await redis_client.setex(cache_key, expire, json.dumps(data))
+    print(f"Эмбеддинги сохранены в Redis: {cache_key}")

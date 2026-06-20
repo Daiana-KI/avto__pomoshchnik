@@ -8,6 +8,7 @@ from app.auth import verify_password, create_access_token
 from app.models import CarModel
 from app.routers import cars, ask, auth
 from app.cache import init_redis, close_redis
+from app.intelligent_search import get_model
 from jinja2 import Environment, FileSystemLoader
 import os
 
@@ -29,6 +30,12 @@ app.include_router(auth.router)
 @app.on_event("startup")
 async def startup():
     await init_redis()
+    # Предварительная загрузка модели эмбеддингов
+    try:
+        get_model()
+        print("Модель эмбеддингов загружена при старте")
+    except Exception as e:
+        print(f"Ошибка загрузки модели: {e}")
 
 @app.on_event("shutdown")
 async def shutdown():
