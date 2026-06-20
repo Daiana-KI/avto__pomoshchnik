@@ -5,7 +5,7 @@ from app.cache import get_embeddings_cache, set_embeddings_cache
 import torch
 
 # Загружаем русскоязычную модель (легковесную, работает на CPU)
-MODEL_NAME = 'intfloat/multilingual-e5-small'
+MODEL_NAME = 'paraphrase-multilingual-MiniLM-L12-v2'
 _model = None
 
 def lemmatize_text(text: str) -> str:
@@ -18,9 +18,7 @@ def get_model():
     global _model
     if _model is None:
         print("Загрузка модели для интеллектуального поиска...")
-        _model = SentenceTransformer(MODEL_NAME, device='cpu')
-        # Переводим модель в половинную точность (float16)
-        _model = _model.half() 
+        _model = SentenceTransformer(MODEL_NAME)
     return _model
 
 def embed_text(text):
